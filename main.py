@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 import telebot
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
+import keyboards
 
 
 load_dotenv()
@@ -14,7 +15,6 @@ bot = telebot.TeleBot(api_key)
 @bot.message_handler(commands=['start'])
 def start(message):
     bot.send_message(message.chat.id, 'Салам пополам!')
-
 
 
 if __name__ == "__main__":
