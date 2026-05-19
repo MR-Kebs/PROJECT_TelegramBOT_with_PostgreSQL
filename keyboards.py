@@ -18,11 +18,35 @@ def menu():
 def mood():
     markup = InlineKeyboardMarkup()
     markup.add(
-        InlineKeyboardButton("1 - 😞", callback_data="1"),
-        InlineKeyboardButton("2 - 😐", callback_data="2"),
-        InlineKeyboardButton("3 - 🙂", callback_data="3"),
-        InlineKeyboardButton("4 - 😊", callback_data="4"),
-        InlineKeyboardButton("5 - 🤩", callback_data="5")
+        InlineKeyboardButton("1 - 😞", callback_data="mood:1"),
+        InlineKeyboardButton("2 - 😐", callback_data="mood:2"),
+        InlineKeyboardButton("3 - 🙂", callback_data="mood:3"),
+        InlineKeyboardButton("4 - 😊", callback_data="mood:4"),
+        InlineKeyboardButton("5 - 🤩", callback_data="mood:5")
+    )
+    return markup
+
+def work_hours():
+    markup = InlineKeyboardMarkup()
+    markup.add(
+        InlineKeyboardButton("1 час", callback_data="work_hours:1"),
+        InlineKeyboardButton("2 часа", callback_data="work_hours:2"),
+        InlineKeyboardButton("3 часа", callback_data="work_hours:3"),
+        InlineKeyboardButton("4 часа", callback_data="work_hours:4"),
+        InlineKeyboardButton("5 часов", callback_data="work_hours:5"),
+        InlineKeyboardButton("Другое", callback_data="work_hours:other")
+    )
+    return markup
+
+def sleep_hours():
+    markup = InlineKeyboardMarkup()
+    markup.add(
+        InlineKeyboardButton("2 часа", callback_data="sleep_hours:2"),
+        InlineKeyboardButton("4 часа", callback_data="sleep_hours:4"),
+        InlineKeyboardButton("6 часов", callback_data="sleep_hours:6"),
+        InlineKeyboardButton("8 часов", callback_data="sleep_hours:8"),
+        InlineKeyboardButton("10 часов", callback_data="sleep_hours:10"),
+        InlineKeyboardButton("Другое", callback_data="sleep_hours:other")
     )
     return markup
 
@@ -34,5 +58,13 @@ def stats():
         InlineKeyboardButton("🔍 Мои инсайты", callback_data="insights"),
         InlineKeyboardButton("📉 График", callback_data="graphs"),
         InlineKeyboardButton("🔙 Назад", callback_data="back")
+    )
+    return markup
+
+def add_comment():
+    markup = InlineKeyboardMarkup()
+    markup.add(
+        InlineKeyboardButton("Да", callback_data="comment:yes"),
+        InlineKeyboardButton("Пропустить", callback_data="comment:skip")
     )
     return markup
