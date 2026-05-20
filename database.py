@@ -43,20 +43,28 @@ def add_entry(user_id, mood, work_hours, sleep_hours, comment):
 
 
 
-
-def get_history(user_id, limit=7):
+def get_history(user_id, limit=None):
+    if limit is not None and isinstance(limit, int) and limit > 0:
+        limit_clause = f"LIMIT {limit}"
+    else:
+        limit_clause = ""
+    
     conn = get_connection()
     cursor = conn.cursor()
 
     try:
-        cursor.execute("""
-            SELECT * FROM entries WHERE user_id = %s ORDER BY entry_date DESC LIMIT %s
-        """, (user_id, limit))
+        cursor.execute(f"""
+            SELECT * FROM entries 
+            WHERE user_id = %s 
+            ORDER BY entry_date DESC 
+            {limit_clause}
+        """, (user_id,))
         rows = cursor.fetchall()
         return rows
 
     except Exception as e:
         print(f"Ошибка при чтении записи: {e}")
+        return []
     finally:
         cursor.close()
         conn.close()
@@ -170,6 +178,47 @@ def clear_entries(user_id):
     finally:
         cursor.close()
         conn.close()
+        
+        
+        
+def set_remind_time(user_id, time):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("""
+            INSERT INTO users (user_id, remind_at)
+            VALUES (%s, %s)
+            ON CONFLICT (user_id) 
+            DO UPDATE SET remind_at = EXCLUDED.remind_at
+        """, (user_id, time))
+
+        conn.commit()
+    except Exception as e:
+        print(f"Ошибка при добавлении записи: {e}")
+        conn.rollback()
+    finally:
+        cursor.close()
+        conn.close()
 
 
-test_connection()
+def get_remind_time(user_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("""
+            SELECT user_id FROM users
+            WHERE remind_at = %s
+        """, (user_id,))
+        rows = cursor.fetchone()
+        return rows
+
+    except Exception as e:
+        print(f"Ошибка при чтении записи: {e}")
+    finally:
+        cursor.close()
+        conn.close()
+
+
+test_connection()   

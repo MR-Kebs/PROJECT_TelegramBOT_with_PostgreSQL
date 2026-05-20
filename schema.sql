@@ -8,3 +8,9 @@ CREATE TABLE entries (
     comment     TEXT,
     created_at  TIMESTAMP DEFAULT NOW()
 );
+
+
+CREATE TABLE users (
+    user_id    BIGINT PRIMARY KEY,
+    remind_at  TIME DEFAULT '21:00'
+);
