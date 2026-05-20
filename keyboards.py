@@ -58,7 +58,7 @@ def history():
         InlineKeyboardButton("За неделю (7 дней)", callback_data="history_week"),
         InlineKeyboardButton("За месяц (30 дней)", callback_data="history_month"),
         InlineKeyboardButton("Всю историю", callback_data="history_all"),
-        InlineKeyboardButton("🔙 Назад", callback_data="back_history")
+        InlineKeyboardButton("🔙 Назад", callback_data="back")
     )
     return markup
 
@@ -80,5 +80,24 @@ def add_comment():
     markup.add(
         InlineKeyboardButton("Да", callback_data="comment:yes"),
         InlineKeyboardButton("Пропустить", callback_data="comment:skip")
+    )
+    return markup
+
+# ОЧИСТКА ДАННЫХ
+
+def clear():
+    markup = InlineKeyboardMarkup()
+    markup.add(
+        InlineKeyboardButton("Да", callback_data="clear_confirm"),
+        InlineKeyboardButton("Нет", callback_data="back")
+    )
+    return markup
+
+
+# Назад
+def back():
+    markup = InlineKeyboardMarkup()
+    markup.add(
+        InlineKeyboardButton("🔙 Назад", callback_data="back")
     )
     return markup

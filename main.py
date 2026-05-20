@@ -211,20 +211,67 @@ def add_comment(message):
 # ГЛОБАЛЬНЫЕ РОУТЫ
 ###########################
 
+# Роут возвращения к меню
 @bot.callback_query_handler(func=lambda call: call.data == "back")
 def back(call):
     bot.answer_callback_query(call.id)
     bot.send_message(call.message.chat.id, "Выбери действие:", reply_markup=keyboards.menu())
-
+    
+# Роут возвращения к меню из истории
 @bot.callback_query_handler(func=lambda call: call.data == "back_history")
 def back_history(call):
     bot.answer_callback_query(call.id)
     bot.send_message(call.message.chat.id, "Выберите за какой период показать историю:", reply_markup=keyboards.history())
 
+# Роут помощи
+@bot.callback_query_handler(func=lambda call: call.data == "help")
+def help(call):
+    bot.answer_callback_query(call.id)
+    bot.send_message(call.message.chat.id, 
+    "🙏 *Помощь по боту*\n\n"
+    "Я помогаю отслеживать твой день: настроение, продуктивность и сон. "
+    "На основе записей строю статистику и даю персональные инсайты.\n\n"
+    "📋 *Что умею:*\n"
+    "➕ *Записать* — добавить день: настроение (1–5), часы работы/учёбы, сон и комментарий\n"
+    "📅 *Статистика* — средние значения за неделю/месяц, инсайты и графики\n"
+    "⏱️ *История* — список записей за неделю, месяц или всё время\n"
+    "⚙️ *Настройки* — задать или убрать время ежедневного напоминания\n"
+    "🧹 *Очистить данные* — полное удаление всех твоих записей (безвозвратно)\n\n"
+    "Если что-то сломалось — перезапусти бота командой /start",
+    parse_mode="Markdown", reply_markup=keyboards.back())
+
+###########################
+# РОУТЫ ДЛЯ ОЧИСТКИ ДАННЫХ
+###########################
+
+# Роут для подтверждения очистки всех данных
+@bot.callback_query_handler(func=lambda call: call.data == "clear_data")
+def clear(call):
+    bot.answer_callback_query(call.id)
+    user_id = call.from_user.id
+    rows = database.get_history(user_id)
+
+    if not rows or rows[0] is None:
+        bot.send_message(call.message.chat.id, "Нечего очищать.")
+        return bot.send_message(call.message.chat.id, "Выбери действие:", reply_markup=keyboards.menu())
+
+    bot.send_message(call.message.chat.id, "Ты уверен, что хочешь очистить все данные? Это действие необратимо.", reply_markup=keyboards.clear())
+
+# Роут очистки всех данных
+@bot.callback_query_handler(func=lambda call: call.data == "clear_confirm")
+def clear_confirm(call):
+    bot.answer_callback_query(call.id)
+    user_id = call.from_user.id
+
+    database.clear_entries(user_id)
+    bot.send_message(call.message.chat.id, "Все данные успешно очищены!")
+    bot.send_message(call.message.chat.id, "Выбери действие:", reply_markup=keyboards.menu())
+
 ###########################
 # РОУТЫ ДЛЯ СТАТИСТИКИ
 ###########################
 
+# Роут показа статистики
 @bot.callback_query_handler(func=lambda call: call.data == "stats")
 def show_stats(call):
     bot.answer_callback_query(call.id)
@@ -239,8 +286,7 @@ def show_stats(call):
     except Exception as e:
         bot.send_message(call.message.chat.id, f"Ошибка: {e}")
 
-
-
+# Роут показа статистики за неделю
 @bot.callback_query_handler(func=lambda call: call.data == "week")
 def show_week(call):
     bot.answer_callback_query(call.id)
@@ -255,6 +301,7 @@ def show_week(call):
     f"Статистика за неделю:\n\n😊 Среднее настроение: {float(rows[0]):.1f}\n💼 Средняя работа: {float(rows[1]):.1f}\n😴 Средний сон: {float(rows[2]):.1f}", reply_markup=keyboards.stats())
   
 
+# Роут показа статистики за месяц
 @bot.callback_query_handler(func=lambda call: call.data == "month")
 def show_month(call):
     bot.answer_callback_query(call.id)
@@ -268,8 +315,7 @@ def show_month(call):
     bot.send_message(call.message.chat.id, 
     f"Статистика за месяц:\n\n😊 Среднее настроение: {float(rows[0]):.1f}\n💼 Средняя работа: {float(rows[1]):.1f}\n😴 Средний сон: {float(rows[2]):.1f}", reply_markup=keyboards.stats())
 
-
-
+# Роут показа инсайтов
 @bot.callback_query_handler(func=lambda call: call.data == "insights")
 def show_insights(call):
     bot.answer_callback_query(call.id)
@@ -287,6 +333,7 @@ def show_insights(call):
 # РОУТЫ ДЛЯ ИСТОРИИ
 ###########################
 
+# Роут показа истории
 @bot.callback_query_handler(func=lambda call: call.data == "history")
 def show_history(call):
     bot.answer_callback_query(call.id)
