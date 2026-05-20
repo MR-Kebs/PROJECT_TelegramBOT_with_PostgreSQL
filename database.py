@@ -221,4 +221,25 @@ def get_remind_time(user_id):
         conn.close()
 
 
+def get_users_to_remind(current_time):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("""
+            SELECT user_id FROM users
+            WHERE remind_at = %s
+        """, (current_time,))
+        rows = cursor.fetchall()
+        return rows
+
+    except Exception as e:
+        print(f"Ошибка при получении пользователей: {e}")
+        return []
+    finally:
+        cursor.close()
+        conn.close()
+
+
+
 test_connection()   

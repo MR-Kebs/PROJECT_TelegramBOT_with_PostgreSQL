@@ -1,14 +1,14 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime
-from database import get_remind_time
+from database import get_users_to_remind
 
 scheduler = BackgroundScheduler()
 
 def send_reminders(bot):
     current_time = datetime.now().strftime("%H:%M")
-    users = get_remind_time(current_time)
+    users = get_users_to_remind(current_time)
     for user in users:
-        bot.send_message(user, "Самое время отметиться!")
+        bot.send_message(user[0], "Самое время отметиться!")
 
 
 def start_scheduler(bot):
