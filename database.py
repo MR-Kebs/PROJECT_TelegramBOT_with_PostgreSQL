@@ -268,7 +268,7 @@ def get_stats_graphic(user_id, interval):
     try:
         cursor.execute("""
             SELECT 
-                   entry_date
+                   entry_date,
                    mood, 
                    work_hours, 
                    sleep_hours
