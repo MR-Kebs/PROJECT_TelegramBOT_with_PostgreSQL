@@ -50,6 +50,8 @@ def sleep_hours():
     )
     return markup
 
+# СТАТИСТИКА
+
 def stats():
     markup = InlineKeyboardMarkup()
     markup.add(

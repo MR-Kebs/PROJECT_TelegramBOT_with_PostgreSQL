@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 import telebot
 import keyboards
 import database
+from scheduler import start_scheduler
 
 
 load_dotenv()
@@ -32,6 +33,7 @@ user_sessions = {
 @bot.message_handler(commands=['start'])
 def start(message):
     bot.send_message(message.chat.id, 'Добро пожаловать в меню!\nНажмите "+" для добавления дня.')
+    user_sessions[message.from_user.id] = {"step": "menu"}
     bot.send_message(message.chat.id, 'Выберите действие:', reply_markup=keyboards.menu())
 
 
@@ -209,7 +211,11 @@ def add_comment(message):
 # ГЛОБАЛЬНЫЕ РОУТЫ
 ###########################
 
-
+@bot.callback_query_handler(func=lambda call: call.data == "back")
+def back(call):
+    bot.answer_callback_query(call.id)
+    bot.send_message(call.message.chat.id, "Выбери действие:", reply_markup=keyboards.menu())
+    
 
 ###########################
 # РОУТЫ ДЛЯ СТАТИСТИКИ
@@ -219,18 +225,20 @@ def add_comment(message):
 def show_stats(call):
     bot.answer_callback_query(call.id)
     user_id = call.from_user.id
-    
+
     try:
         count = database.get_history(user_id).count()
         if count <= 3:
             bot.send_message(call.message.chat.id, "У тебя пока недостаточно записей для статистики. Добавь хотя бы 3 записи!")
         else:
+            user_sessions[user_id]["step"] = "stats_menu"
             bot.send_message(call.message.chat.id, "Выбери действие:", reply_markup=keyboards.stats())
     except Exception as e:
         bot.send_message(call.message.chat.id, f"Ошибка: {e}")
   
 
 
+start_scheduler(bot)
 if __name__ == "__main__":
     print('Ботик запущен')
     bot.polling(non_stop=True)
