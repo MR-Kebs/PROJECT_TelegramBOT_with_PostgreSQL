@@ -219,6 +219,26 @@ def get_remind_time(user_id):
     finally:
         cursor.close()
         conn.close()
+    
+        
+def clear_remind_time(user_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("""
+            DELETE FROM users WHERE user_id = %s
+        """, (user_id,))
+
+        conn.commit()
+    except Exception as e:
+        print(f"Ошибка при удалении записи: {e}")
+        conn.rollback()
+    finally:
+        cursor.close()
+        conn.close()
+        
+
 
 
 def get_users_to_remind(current_time):
@@ -240,6 +260,29 @@ def get_users_to_remind(current_time):
         cursor.close()
         conn.close()
 
+
+def get_stats_graphic(user_id, interval):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("""
+            SELECT 
+                   entry_date
+                   mood, 
+                   work_hours, 
+                   sleep_hours
+            FROM entries 
+            WHERE user_id = %s AND entry_date >= CURRENT_DATE - INTERVAL '%s days'
+        """, (user_id, interval))
+        rows = cursor.fetchall()
+        return rows
+
+    except Exception as e:
+        print(f"Ошибка при чтении записи: {e}")
+    finally:
+        cursor.close()
+        conn.close()
 
 
 test_connection()   
