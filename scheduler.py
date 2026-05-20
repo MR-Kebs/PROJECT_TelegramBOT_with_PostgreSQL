@@ -4,7 +4,11 @@ from database import get_users_to_remind
 
 scheduler = BackgroundScheduler()
 
+active = False
+
 def send_reminders(bot):
+    if active == False:
+        return
     current_time = datetime.now().strftime("%H:%M")
     users = get_users_to_remind(current_time)
     for user in users:
@@ -12,5 +16,7 @@ def send_reminders(bot):
 
 
 def start_scheduler(bot):
+    if active == False:
+        return
     scheduler.add_job(send_reminders, 'interval', minutes = 1, args=[bot])
     scheduler.start()

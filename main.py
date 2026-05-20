@@ -33,7 +33,6 @@ user_sessions = {
 @bot.message_handler(commands=['start'])
 def start(message):
     bot.send_message(message.chat.id, 'Добро пожаловать в меню!\nНажмите "+" для добавления дня.')
-    user_sessions[message.from_user.id] = {"step": "menu"}
     bot.send_message(message.chat.id, 'Выберите действие:', reply_markup=keyboards.menu())
 
 
@@ -227,15 +226,58 @@ def show_stats(call):
     user_id = call.from_user.id
 
     try:
-        count = database.get_history(user_id).count()
+        count = len(database.get_history(user_id))
         if count <= 3:
             bot.send_message(call.message.chat.id, "У тебя пока недостаточно записей для статистики. Добавь хотя бы 3 записи!")
         else:
-            user_sessions[user_id]["step"] = "stats_menu"
             bot.send_message(call.message.chat.id, "Выбери действие:", reply_markup=keyboards.stats())
     except Exception as e:
         bot.send_message(call.message.chat.id, f"Ошибка: {e}")
+
+
+
+@bot.callback_query_handler(func=lambda call: call.data == "week")
+def show_week(call):
+    bot.answer_callback_query(call.id)
+    user_id = call.from_user.id
+    rows = database.get_stats_week(user_id)
+
+    if not rows or rows[0] is None:
+        bot.send_message(call.message.chat.id, "Нет записей за неделю.")
+        return
+
+    bot.send_message(call.message.chat.id, 
+    f"Статистика за неделю:\n\n😊 Среднее настроение: {float(rows[0]):.1f}\n💻 Средняя работа: {float(rows[1]):.1f}\n😴 Средний сон: {float(rows[2]):.1f}", reply_markup=keyboards.stats())
   
+
+@bot.callback_query_handler(func=lambda call: call.data == "month")
+def show_month(call):
+    bot.answer_callback_query(call.id)
+    user_id = call.from_user.id
+    rows = database.get_stats_month(user_id)
+
+    if not rows or rows[0] is None:
+        bot.send_message(call.message.chat.id, "Нет записей за месяц.")
+        return
+
+    bot.send_message(call.message.chat.id, 
+    f"Статистика за месяц:\n\n😊 Среднее настроение: {float(rows[0]):.1f}\n💻 Средняя работа: {float(rows[1]):.1f}\n😴 Средний сон: {float(rows[2]):.1f}", reply_markup=keyboards.stats())
+
+
+
+@bot.callback_query_handler(func=lambda call: call.data == "insights")
+def show_insights(call):
+    bot.answer_callback_query(call.id)
+    user_id = call.from_user.id
+    rows = database.get_insights(user_id)
+
+    if not rows or rows[0] is None:
+        bot.send_message(call.message.chat.id, "Нет инсайтов.")
+        return
+
+    bot.send_message(call.message.chat.id, 
+    f"Твой инсайт:\n\n_{rows[0]}_", parse_mode="Markdown", reply_markup=keyboards.stats())
+
 
 
 start_scheduler(bot)
