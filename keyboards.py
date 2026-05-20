@@ -7,11 +7,11 @@ def menu():
     markup = InlineKeyboardMarkup()
     markup.add(
         InlineKeyboardButton("➕ Записать", callback_data="add_day"),
-        InlineKeyboardButton("Статистика", callback_data="stats"),
-        InlineKeyboardButton("История", callback_data="history"),
-        InlineKeyboardButton("Настройки", callback_data="settings"),
-        InlineKeyboardButton("Помощь", callback_data="help"),
-        InlineKeyboardButton("Очистить данные", callback_data="clear_data")
+        InlineKeyboardButton("📅 Статистика", callback_data="stats"),
+        InlineKeyboardButton("⏱️ История", callback_data="history"),
+        InlineKeyboardButton("⚙️ Настройки", callback_data="settings"),
+        InlineKeyboardButton("🙏 Помощь", callback_data="help"),
+        InlineKeyboardButton("🧹 Очистить данные", callback_data="clear_data")
     )
     return markup
 
