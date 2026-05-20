@@ -208,8 +208,8 @@ def get_remind_time(user_id):
 
     try:
         cursor.execute("""
-            SELECT user_id FROM users
-            WHERE remind_at = %s
+            SELECT remind_at FROM users
+            WHERE user_id = %s
         """, (user_id,))
         rows = cursor.fetchone()
         return rows
