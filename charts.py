@@ -35,28 +35,3 @@ def generate_stats_image(user_id: int, interval: int) -> BytesIO | None:
     plt.close(fig)
     
     return buf
-
-
-
-
-@bot.message_handler(commands=['stats'])
-def cmd_stats(message):
-    user_id = message.from_user.id
-    interval = 7  # можно заменить на парсинг из сообщения или inline-кнопки
-    
-    # Генерируем график
-    image_buffer = generate_stats_image(user_id, interval)
-    
-    if image_buffer is None:
-        bot.send_message(message.chat.id, "📊 Нет данных за указанный период. Начните вносить записи!")
-        return
-
-    # Отправляем фото
-    bot.send_photo(
-        chat_id=message.chat.id,
-        photo=image_buffer,
-        caption=f"📈 Ваша статистика за последние {interval} дней"
-    )
-    
-    # 🔥 Обязательно закрываем буфер, иначе бот будет есть память
-    image_buffer.close()

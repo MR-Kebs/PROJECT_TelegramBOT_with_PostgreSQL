@@ -5,7 +5,7 @@ import keyboards
 import database
 from scheduler import start_scheduler
 import re
-
+from charts import generate_stats_image
 
 load_dotenv()
 api_key = os.getenv("BOT_TOKEN")
@@ -279,7 +279,7 @@ def show_stats(call):
 
     try:
         count = len(database.get_history(user_id))
-        if count <= 3:
+        if count <= 2:
             bot.send_message(call.message.chat.id, "У тебя пока недостаточно записей для статистики. Добавь хотя бы 3 записи!")
         else:
             bot.send_message(call.message.chat.id, "Выбери действие:", reply_markup=keyboards.stats())
@@ -298,7 +298,8 @@ def show_week(call):
         return
 
     bot.send_message(call.message.chat.id, 
-    f"Статистика за неделю:\n\n😊 Среднее настроение: {float(rows[0]):.1f}\n💼 Средняя работа: {float(rows[1]):.1f}\n😴 Средний сон: {float(rows[2]):.1f}", reply_markup=keyboards.stats())
+    f"Статистика за неделю:\n\n😊 Среднее настроение: {float(rows[0]):.1f}\n💼 Средняя работа: {float(rows[1]):.1f}\n😴 Средний сон: {float(rows[2]):.1f}")
+    bot.send_message(call.message.chat.id, "Выбери действие:", reply_markup=keyboards.stats())
   
 
 # Роут показа статистики за месяц
@@ -313,7 +314,8 @@ def show_month(call):
         return
 
     bot.send_message(call.message.chat.id, 
-    f"Статистика за месяц:\n\n😊 Среднее настроение: {float(rows[0]):.1f}\n💼 Средняя работа: {float(rows[1]):.1f}\n😴 Средний сон: {float(rows[2]):.1f}", reply_markup=keyboards.stats())
+    f"Статистика за месяц:\n\n😊 Среднее настроение: {float(rows[0]):.1f}\n💼 Средняя работа: {float(rows[1]):.1f}\n😴 Средний сон: {float(rows[2]):.1f}")
+    bot.send_message(call.message.chat.id, "Выбери действие:", reply_markup=keyboards.stats())
 
 # Роут показа инсайтов
 @bot.callback_query_handler(func=lambda call: call.data == "insights")
@@ -327,7 +329,76 @@ def show_insights(call):
         return
 
     bot.send_message(call.message.chat.id, 
-    f"Твой инсайт:\n\n_{rows[0]}_", parse_mode="Markdown", reply_markup=keyboards.stats())
+    f"Твой инсайт:\n\n_{rows[0]}_", parse_mode="Markdown")
+    bot.send_message(call.message.chat.id, "Выбери действие:", reply_markup=keyboards.stats())
+
+###########################
+# РОУТЫ ДЛЯ ГРАФИКОВ
+###########################
+
+# Роут показа меню графиков
+@bot.callback_query_handler(func=lambda call: call.data == "graphs")
+def show_graphs(call):
+    bot.answer_callback_query(call.id)
+    bot.send_message(call.message.chat.id, "Выберите период для графика:", reply_markup=keyboards.graphs())
+
+# Роут для вывода графика за неделю
+@bot.callback_query_handler(func=lambda call: call.data == "graph_week")
+def show_graph_week(call):
+    bot.answer_callback_query(call.id)
+    user_id = call.from_user.id
+    interval = 7
+    image_buffer = generate_stats_image(user_id, interval)
+    if image_buffer is None:
+        bot.send_message(message.chat.id, "Недостаточно данных за указанный период.")
+        return
+
+    bot.send_photo(
+        chat_id=call.message.chat.id,
+        photo=image_buffer,
+        caption=f"📈 Ваша статистика за последние дни: {interval}",
+    )
+    bot.send_message(call.message.chat.id, "Выберите период для графика:", reply_markup=keyboards.graphs())
+    image_buffer.close()
+
+
+# Роут для вывода графика за две недели
+@bot.callback_query_handler(func=lambda call: call.data == "graph_two_weeks")
+def show_graph_two_weeks(call):
+    bot.answer_callback_query(call.id)
+    user_id = call.from_user.id
+    interval = 14
+    image_buffer = generate_stats_image(user_id, interval)
+    if image_buffer is None:
+        bot.send_message(message.chat.id, "Недостаточно данных за указанный период.")
+        return
+
+    bot.send_photo(
+        chat_id=call.message.chat.id,
+        photo=image_buffer,
+        caption=f"📈 Ваша статистика за последние дни: {interval}",
+    )
+    bot.send_message(call.message.chat.id, "Выберите период для графика:", reply_markup=keyboards.graphs())
+    image_buffer.close()
+    
+# Роут для вывода графика за месяц
+@bot.callback_query_handler(func=lambda call: call.data == "graph_month")
+def show_graph_month(call):
+    bot.answer_callback_query(call.id)
+    user_id = call.from_user.id
+    interval = 30
+    image_buffer = generate_stats_image(user_id, interval)
+    if image_buffer is None:
+        bot.send_message(message.chat.id, "Недостаточно данных за указанный период.")
+        return
+
+    bot.send_photo(
+        chat_id=call.message.chat.id,
+        photo=image_buffer,
+        caption=f"📈 Ваша статистика за последние дни: {interval}",
+    )
+    bot.send_message(call.message.chat.id, "Выберите период для графика:", reply_markup=keyboards.graphs())
+    image_buffer.close()
 
 ###########################
 # РОУТЫ ДЛЯ ИСТОРИИ
@@ -366,7 +437,7 @@ def show_history_week(call):
             f"😊 Настроение: {mood} \n"
             f"💼 Работа: {float(work)} \n"
             f"😴 Сон: {float(sleep)} \n"
-            f"💬 Комментарий: {comment + "\n" or 'без комментария \n'}"
+            f"💬 Комментарий: {comment + "\n" if comment else 'без комментария \n'}"
             f"🕐 Создано: {str(created_at)[11:19]}"
         )
         lines.append(shema)
@@ -396,7 +467,7 @@ def show_history_month(call):
             f"😊 Настроение: {mood} \n"
             f"💼 Работа: {float(work)} \n"
             f"😴 Сон: {float(sleep)} \n"
-            f"💬 Комментарий: {comment + "\n" or 'без комментария \n'}"
+            f"💬 Комментарий: {comment + "\n" if comment else 'без комментария \n'}"
             f"🕐 Создано: {str(created_at)[11:19]}"
         )
         lines.append(shema)
@@ -425,7 +496,7 @@ def show_history_all(call):
             f"😊 Настроение: {mood} \n"
             f"💼 Работа: {float(work)} \n"
             f"😴 Сон: {float(sleep)} \n"
-            f"💬 Комментарий: {comment + "\n" or 'без комментария \n'}"
+            f"💬 Комментарий: {comment + "\n" if comment else 'без комментария \n'}"
             f"🕐 Создано: {str(created_at)[11:19]}"
         )
         lines.append(shema)
@@ -433,8 +504,6 @@ def show_history_all(call):
     bot.send_message(call.message.chat.id,
     f"История за все время:\n\n{'\n\n'.join(lines)}",
     reply_markup=keyboards.history())
-
-
 
 start_scheduler(bot)
 if __name__ == "__main__":
