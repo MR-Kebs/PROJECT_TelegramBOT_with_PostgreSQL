@@ -101,3 +101,14 @@ def back():
         InlineKeyboardButton("🔙 Назад", callback_data="back")
     )
     return markup
+
+# ГРАФИКИ
+def graphs():
+    markup = InlineKeyboardMarkup()
+    markup.add(
+        InlineKeyboardButton("За неделю (7 дней)", callback_data="graph_week"),
+        InlineKeyboardButton("За две недели (14 дней)", callback_data="graph_two_weeks"),
+        InlineKeyboardButton("За месяц (30 дней)", callback_data="graph_month"),
+        InlineKeyboardButton("🔙 Назад", callback_data="back")
+    )
+    return markup
