@@ -50,6 +50,18 @@ def sleep_hours():
     )
     return markup
 
+# ИСТОРИЯ
+
+def history():
+    markup = InlineKeyboardMarkup()
+    markup.add(
+        InlineKeyboardButton("За неделю (7 дней)", callback_data="history_week"),
+        InlineKeyboardButton("За месяц (30 дней)", callback_data="history_month"),
+        InlineKeyboardButton("Всю историю", callback_data="history_all"),
+        InlineKeyboardButton("🔙 Назад", callback_data="back_history")
+    )
+    return markup
+
 # СТАТИСТИКА
 
 def stats():

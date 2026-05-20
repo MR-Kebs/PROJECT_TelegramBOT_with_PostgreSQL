@@ -4,6 +4,7 @@ import telebot
 import keyboards
 import database
 from scheduler import start_scheduler
+import re
 
 
 load_dotenv()
@@ -214,7 +215,11 @@ def add_comment(message):
 def back(call):
     bot.answer_callback_query(call.id)
     bot.send_message(call.message.chat.id, "Выбери действие:", reply_markup=keyboards.menu())
-    
+
+@bot.callback_query_handler(func=lambda call: call.data == "back_history")
+def back_history(call):
+    bot.answer_callback_query(call.id)
+    bot.send_message(call.message.chat.id, "Выберите за какой период показать историю:", reply_markup=keyboards.history())
 
 ###########################
 # РОУТЫ ДЛЯ СТАТИСТИКИ
@@ -247,7 +252,7 @@ def show_week(call):
         return
 
     bot.send_message(call.message.chat.id, 
-    f"Статистика за неделю:\n\n😊 Среднее настроение: {float(rows[0]):.1f}\n💻 Средняя работа: {float(rows[1]):.1f}\n😴 Средний сон: {float(rows[2]):.1f}", reply_markup=keyboards.stats())
+    f"Статистика за неделю:\n\n😊 Среднее настроение: {float(rows[0]):.1f}\n💼 Средняя работа: {float(rows[1]):.1f}\n😴 Средний сон: {float(rows[2]):.1f}", reply_markup=keyboards.stats())
   
 
 @bot.callback_query_handler(func=lambda call: call.data == "month")
@@ -261,7 +266,7 @@ def show_month(call):
         return
 
     bot.send_message(call.message.chat.id, 
-    f"Статистика за месяц:\n\n😊 Среднее настроение: {float(rows[0]):.1f}\n💻 Средняя работа: {float(rows[1]):.1f}\n😴 Средний сон: {float(rows[2]):.1f}", reply_markup=keyboards.stats())
+    f"Статистика за месяц:\n\n😊 Среднее настроение: {float(rows[0]):.1f}\n💼 Средняя работа: {float(rows[1]):.1f}\n😴 Средний сон: {float(rows[2]):.1f}", reply_markup=keyboards.stats())
 
 
 
@@ -277,6 +282,110 @@ def show_insights(call):
 
     bot.send_message(call.message.chat.id, 
     f"Твой инсайт:\n\n_{rows[0]}_", parse_mode="Markdown", reply_markup=keyboards.stats())
+
+###########################
+# РОУТЫ ДЛЯ ИСТОРИИ
+###########################
+
+@bot.callback_query_handler(func=lambda call: call.data == "history")
+def show_history(call):
+    bot.answer_callback_query(call.id)
+    user_id = call.from_user.id
+    rows = database.get_history(user_id)
+
+    if not rows or rows[0] is None:
+        bot.send_message(call.message.chat.id, "Нет записей.")
+        return
+
+    bot.send_message(call.message.chat.id, "Выберите за какой период показать историю:", reply_markup=keyboards.history())
+
+# ЗА НЕДЕЛЮ
+@bot.callback_query_handler(func=lambda call: call.data == "history_week")
+def show_history_week(call):
+    bot.answer_callback_query(call.id)
+    user_id = call.from_user.id
+    rows = database.get_history(user_id, 7)
+
+    if not rows or rows[0] is None:
+        bot.send_message(call.message.chat.id, "Нет записей за неделю.")
+        return
+
+    lines = []
+    for row in rows:
+        id, u_id, date, mood, work, sleep, comment, created_at = row
+            
+        shema = (
+            f"📅 {date}\n"
+            f"😊 Настроение: {mood} \n"
+            f"💼 Работа: {float(work)} \n"
+            f"😴 Сон: {float(sleep)} \n"
+            f"💬 Комментарий: {comment + "\n" or 'без комментария \n'}"
+            f"🕐 Создано: {str(created_at)[11:19]}"
+        )
+        lines.append(shema)
+
+    bot.send_message(call.message.chat.id,
+    f"История за неделю:\n\n{'\n\n'.join(lines)}",
+    reply_markup=keyboards.history())
+
+
+# ЗА МЕСЯЦ
+@bot.callback_query_handler(func=lambda call: call.data == "history_month")
+def show_history_month(call):
+    bot.answer_callback_query(call.id)
+    user_id = call.from_user.id
+    rows = database.get_history(user_id, 30)
+
+    if not rows or rows[0] is None:
+        bot.send_message(call.message.chat.id, "Нет записей за месяц.")
+        return
+
+    lines = []
+    for row in rows:
+        id, u_id, date, mood, work, sleep, comment, created_at = row
+            
+        shema = (
+            f"📅 {date}\n"
+            f"😊 Настроение: {mood} \n"
+            f"💼 Работа: {float(work)} \n"
+            f"😴 Сон: {float(sleep)} \n"
+            f"💬 Комментарий: {comment + "\n" or 'без комментария \n'}"
+            f"🕐 Создано: {str(created_at)[11:19]}"
+        )
+        lines.append(shema)
+
+    bot.send_message(call.message.chat.id,
+    f"История за месяц:\n\n{'\n\n'.join(lines)}",
+    reply_markup=keyboards.history())
+
+# ЗА ВСЕ ВРЕМЯ
+@bot.callback_query_handler(func=lambda call: call.data == "history_all")
+def show_history_all(call):
+    bot.answer_callback_query(call.id)
+    user_id = call.from_user.id
+    rows = database.get_history(user_id)
+
+    if not rows or rows[0] is None:
+        bot.send_message(call.message.chat.id, "Нет записей.")
+        return
+
+    lines = []
+    for row in rows:
+        id, u_id, date, mood, work, sleep, comment, created_at = row
+            
+        shema = (
+            f"📅 {date}\n"
+            f"😊 Настроение: {mood} \n"
+            f"💼 Работа: {float(work)} \n"
+            f"😴 Сон: {float(sleep)} \n"
+            f"💬 Комментарий: {comment + "\n" or 'без комментария \n'}"
+            f"🕐 Создано: {str(created_at)[11:19]}"
+        )
+        lines.append(shema)
+
+    bot.send_message(call.message.chat.id,
+    f"История за все время:\n\n{'\n\n'.join(lines)}",
+    reply_markup=keyboards.history())
 
 
 
