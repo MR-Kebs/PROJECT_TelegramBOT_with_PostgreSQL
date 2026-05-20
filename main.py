@@ -206,8 +206,25 @@ def add_comment(message):
 
 
 ###########################
-# РОУТЫ ДЛЯ МЕНЮ
+# РОУТЫ ДЛЯ СТАТИСТИКИ
 ###########################
+
+@bot.callback_query_handler(func=lambda call: call.data == "stats")
+def show_stats(call):
+    bot.answer_callback_query(call.id)
+    user_id = call.from_user.id
+    cursor = database.get_connection().cursor()
+    
+    try:
+        cursor.execute("SELECT COUNT(*) FROM entries WHERE user_id = %s", (user_id,))
+        count = cursor.fetchone()[0]
+        if count < 5:
+            bot.send_message(call.message.chat.id, "У тебя пока недостаточно записей для статистики. Добавь хотя бы 5 записей!")
+        else:
+            bot.send_message(call.message.chat.id, "Выбери действие:", reply_markup=keyboards.stats())
+    except Exception as e:
+        bot.send_message(call.message.chat.id, f"Ошибка: {e}")
+  
 
 
 if __name__ == "__main__":
