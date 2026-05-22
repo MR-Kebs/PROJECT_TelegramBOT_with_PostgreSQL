@@ -3,7 +3,8 @@ from dotenv import load_dotenv
 import telebot
 import keyboards
 import database
-from scheduler import start_scheduler, active
+from scheduler import start_scheduler
+import scheduler
 import re
 from charts import generate_stats_image
 
@@ -73,7 +74,7 @@ def is_comment_skip(call):
 def add_day(call):
     bot.answer_callback_query(call.id)
     user_id = call.from_user.id
-    if active == True:
+    if scheduler.active == True:
         user_sessions[user_id] = {"step": "mood", "data": {}}
         bot.send_message(
             call.message.chat.id, 
@@ -250,7 +251,7 @@ def comment_skip(call):
     )
     
     del user_sessions[user_id]
-    active = False
+    scheduler.active = False
     bot.send_message(call.message.chat.id, "✅ День записан!")
     bot.send_message(call.message.chat.id, "Выбери действие:", reply_markup=keyboards.menu())
 
@@ -277,7 +278,7 @@ def add_comment(message):
     )
     
     del user_sessions[user_id]
-    active = False
+    scheduler.active = False
     bot.send_message(message.chat.id, "✅ День записан!")
     bot.send_message(message.chat.id, "Выбери действие:", reply_markup=keyboards.menu())
 
