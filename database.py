@@ -1,6 +1,7 @@
 import os
 import psycopg2
 from dotenv import load_dotenv
+from datetime import date
 
 load_dotenv()
 
@@ -41,6 +42,15 @@ def add_entry(user_id, mood, work_hours, sleep_hours, comment):
         cursor.close()
         conn.close()
 
+
+def has_entry_today(user_id: int) -> bool:
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT 1 FROM entries WHERE user_id = %s AND entry_date = %s LIMIT 1",
+                (user_id, date.today())
+            )
+            return cur.fetchone() is not None
 
 
 def get_history(user_id, limit=None):

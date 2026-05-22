@@ -74,17 +74,23 @@ def is_comment_skip(call):
 def add_day(call):
     bot.answer_callback_query(call.id)
     user_id = call.from_user.id
-    if scheduler.active == True:
-        user_sessions[user_id] = {"step": "mood", "data": {}}
+
+    if database.has_entry_today(user_id):
         bot.send_message(
-            call.message.chat.id, 
-            'Оцени свое настроение сегодня от 1 до 5, где 1 - ужасно 😞, 5 - отлично 🤩:', 
-            reply_markup=keyboards.mood()
+            call.message.chat.id,
+            "Вы уже делали запись сегодня ❤",
+            reply_markup=keyboards.me_delete_back()
         )
-    else:
-        bot.send_message(call.message.chat.id,
-        "Вы уже делали запись сегодня ❤",
-        reply_markup=keyboards.me_delete_back())
+        return
+        
+    user_sessions[user_id] = {"step": "mood", "data": {}}
+    bot.send_message(
+        call.message.chat.id, 
+        'Оцени свое настроение сегодня от 1 до 5, где 1 - ужасно 😞, 5 - отлично 🤩:', 
+        reply_markup=keyboards.mood()
+    )
+   
+
 
 
 # Роут обработки настроения, главная задача дать статус для следущего роута и отправить текст
