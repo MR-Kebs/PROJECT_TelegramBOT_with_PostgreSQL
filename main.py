@@ -29,6 +29,8 @@ user_sessions = {
 }
 """
 
+# ЧИСТО ТЕСТ
+
 
 # Роут отправляет в менюшку
 @bot.message_handler(commands=['start'])
