@@ -3,9 +3,10 @@ from dotenv import load_dotenv
 import telebot
 import keyboards
 import database
-from scheduler import start_scheduler
+from scheduler import start_scheduler, active
 import re
 from charts import generate_stats_image
+
 
 load_dotenv()
 api_key = os.getenv("BOT_TOKEN")
