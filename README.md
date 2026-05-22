@@ -61,3 +61,8 @@
 - Создать все таблицы из schema.sql в базе данных указанной в .env
 - Версия Python 3.10+
 - Установить все библиотеки из файла requirements.txt (pip install -r requirements.txt)
+
+
+
+## Схема БД
+![Таблицы](Схема_БД.png)
