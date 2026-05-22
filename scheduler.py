@@ -1,6 +1,7 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, time
 from database import get_users_to_remind
+from keyboards import menu
 
 scheduler = BackgroundScheduler()
 
@@ -14,9 +15,10 @@ def send_reminders(bot):
     users = get_users_to_remind(current_time)
     for user in users:
         if start_vibe <= ct < start_atmosphere:
-            bot.send_message(user[0], "Самое время отметить свой вайбик!")
+            bot.send_message(user[0], "Самое время отметить свой вайбик!", reply_markup=menu())
+            
         else:
-            bot.send_message(user[0], "Самое время отметить свою атмосферу!")
+            bot.send_message(user[0], "Самое время отметить свою атмосферу!", reply_markup=menu())
     active = True
 
 
