@@ -4,8 +4,6 @@ from database import get_users_to_remind
 
 scheduler = BackgroundScheduler()
 
-active = False
-
 def send_reminders(bot):
     current_time = datetime.now().strftime("%H:%M")
     ct = datetime.now().time()
