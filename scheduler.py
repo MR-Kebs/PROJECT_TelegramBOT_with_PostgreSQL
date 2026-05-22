@@ -4,6 +4,8 @@ from database import get_users_to_remind
 
 scheduler = BackgroundScheduler()
 
+active = True
+
 def send_reminders(bot):
     current_time = datetime.now().strftime("%H:%M")
     ct = datetime.now().time()
@@ -15,6 +17,7 @@ def send_reminders(bot):
             bot.send_message(user[0], "Самое время отметить свой вайбик!")
         else:
             bot.send_message(user[0], "Самое время отметить свою атмосферу!")
+    active = True
 
 
 def start_scheduler(bot):
