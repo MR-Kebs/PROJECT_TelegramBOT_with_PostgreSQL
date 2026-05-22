@@ -73,12 +73,17 @@ def is_comment_skip(call):
 def add_day(call):
     bot.answer_callback_query(call.id)
     user_id = call.from_user.id
-    user_sessions[user_id] = {"step": "mood", "data": {}}
-    bot.send_message(
-        call.message.chat.id, 
-        'Оцени свое настроение сегодня от 1 до 5, где 1 - ужасно 😞, 5 - отлично 🤩:', 
-        reply_markup=keyboards.mood()
-    )
+    if active == True:
+        user_sessions[user_id] = {"step": "mood", "data": {}}
+        bot.send_message(
+            call.message.chat.id, 
+            'Оцени свое настроение сегодня от 1 до 5, где 1 - ужасно 😞, 5 - отлично 🤩:', 
+            reply_markup=keyboards.mood()
+        )
+    else:
+        bot.send_message(call.message.chat.id,
+        "Вы уже делали запись сегодня ❤",
+        reply_markup=keyboards.me_delete_back())
 
 
 # Роут обработки настроения, главная задача дать статус для следущего роута и отправить текст
@@ -245,6 +250,7 @@ def comment_skip(call):
     )
     
     del user_sessions[user_id]
+    active = False
     bot.send_message(call.message.chat.id, "✅ День записан!")
     bot.send_message(call.message.chat.id, "Выбери действие:", reply_markup=keyboards.menu())
 
@@ -271,6 +277,7 @@ def add_comment(message):
     )
     
     del user_sessions[user_id]
+    active = False
     bot.send_message(message.chat.id, "✅ День записан!")
     bot.send_message(message.chat.id, "Выбери действие:", reply_markup=keyboards.menu())
 
@@ -362,11 +369,11 @@ def show_stats(call):
     try:
         count = len(database.get_history(user_id))
         if count <= 2:
-            bot.send_message(call.message.chat.id, "У тебя пока недостаточно записей для статистики. Добавь хотя бы 3 записи!")
+            bot.send_message(call.message.chat.id, "У тебя пока недостаточно записей для статистики. Добавь хотя бы 3 записи!", reply_markup=keyboards.me_delete_back())
         else:
             bot.send_message(call.message.chat.id, "Выбери действие:", reply_markup=keyboards.stats())
     except Exception as e:
-        bot.send_message(call.message.chat.id, f"Ошибка: {e}")
+        bot.send_message(call.message.chat.id, f"Ошибка: {e}", reply_markup=keyboards.me_delete_back())
 
 # Роут показа статистики за неделю
 @bot.callback_query_handler(func=lambda call: call.data == "week")
@@ -539,7 +546,7 @@ def show_history(call):
     rows = database.get_history(user_id)
 
     if not rows or rows[0] is None:
-        bot.send_message(call.message.chat.id, "Нет записей.")
+        bot.send_message(call.message.chat.id, "Нет записей.", reply_markup=keyboards.me_delete_back())
         return
 
     bot.send_message(call.message.chat.id, "Выберите за какой период показать историю:", reply_markup=keyboards.history())
