@@ -58,7 +58,7 @@ def history():
         InlineKeyboardButton("За неделю (7 дней)", callback_data="history_week"),
         InlineKeyboardButton("За месяц (30 дней)", callback_data="history_month"),
         InlineKeyboardButton("Всю историю", callback_data="history_all"),
-        InlineKeyboardButton("🔙 Назад", callback_data="back")
+        InlineKeyboardButton("🔙 Назад", callback_data="me_delete_back")
     )
     return markup
 
@@ -71,7 +71,7 @@ def stats():
         InlineKeyboardButton("📅 За месяц", callback_data="month"),
         InlineKeyboardButton("🔍 Мои инсайты", callback_data="insights"),
         InlineKeyboardButton("📉 График", callback_data="graphs"),
-        InlineKeyboardButton("🔙 Назад", callback_data="back")
+        InlineKeyboardButton("🔙 Назад", callback_data="me_delete_back")
     )
     return markup
 
@@ -89,7 +89,7 @@ def clear():
     markup = InlineKeyboardMarkup()
     markup.add(
         InlineKeyboardButton("Да", callback_data="clear_confirm"),
-        InlineKeyboardButton("Нет", callback_data="back")
+        InlineKeyboardButton("Нет", callback_data="me_delete_back")
     )
     return markup
 
@@ -102,6 +102,13 @@ def back():
     )
     return markup
 
+def me_delete_back():
+    markup = InlineKeyboardMarkup()
+    markup.add(
+        InlineKeyboardButton("🔙 Назад", callback_data="me_delete_back")
+    )
+    return markup
+
 # ГРАФИКИ
 def graphs():
     markup = InlineKeyboardMarkup()
@@ -109,7 +116,7 @@ def graphs():
         InlineKeyboardButton("За неделю (7 дней)", callback_data="graph_week"),
         InlineKeyboardButton("За две недели (14 дней)", callback_data="graph_two_weeks"),
         InlineKeyboardButton("За месяц (30 дней)", callback_data="graph_month"),
-        InlineKeyboardButton("🔙 Назад", callback_data="back")
+        InlineKeyboardButton("🔙 Назад", callback_data="graphs_back")
     )
     return markup
 
@@ -119,7 +126,7 @@ def settings_A():
     markup.add(
         InlineKeyboardButton("Изменить напоминаниe", callback_data="edit_reminder"),
         InlineKeyboardButton("Удалить напоминание", callback_data="delete_reminder"),
-        InlineKeyboardButton("🔙 Назад", callback_data="back")
+        InlineKeyboardButton("🔙 Назад", callback_data="me_delete_back")
     )
     return markup
 
@@ -127,6 +134,6 @@ def settings_B():
     markup = InlineKeyboardMarkup()
     markup.add(
         InlineKeyboardButton("Добавить напоминание", callback_data="add_reminder"),
-        InlineKeyboardButton("🔙 Назад", callback_data="back")
+        InlineKeyboardButton("🔙 Назад", callback_data="me_delete_back")
     )
     return markup

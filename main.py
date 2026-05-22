@@ -29,9 +29,6 @@ user_sessions = {
 }
 """
 
-# ЧИСТО ТЕСТ
-
-
 # Роут отправляет в менюшку
 @bot.message_handler(commands=['start'])
 def start(message):
@@ -90,6 +87,12 @@ def add_mood(call):
     user_id = call.from_user.id
     user_sessions[user_id]["step"] = "work_hours"
     user_sessions[user_id]["data"]["mood"] = int(call.data.split(":")[1])
+    bot.edit_message_text(
+        f"😊 Твое настроение сегодня: _{user_sessions[user_id]['data']['mood']}_",
+        call.message.chat.id,
+        call.message.message_id, 
+        parse_mode="Markdown"
+    )
     bot.send_message(
         call.message.chat.id, 
         'Сколько часов ты потратил на полезную работу/учебу?', 
@@ -104,6 +107,12 @@ def add_work(call):
     user_id = call.from_user.id
     user_sessions[user_id]["step"] = "sleep_hours"
     user_sessions[user_id]["data"]["work"] = int(call.data.split(":")[1])
+    bot.edit_message_text(
+        f"💼 Ты работал сегодня: _{user_sessions[user_id]['data']['work']} часов_",
+        call.message.chat.id,
+        call.message.message_id, 
+        parse_mode="Markdown"
+    )
     bot.send_message(
         call.message.chat.id, 
         'Сколько часов ты спал?', 
@@ -113,19 +122,34 @@ def add_work(call):
 @bot.callback_query_handler(is_work_other)
 def add_work_other(call):
     bot.answer_callback_query(call.id)
-    user_sessions[call.from_user.id]["step"] = "work_hours_other"
-    bot.send_message(call.message.chat.id, "Введи количество часов работы цифрами:")
+    user_id = call.from_user.id
+    user_sessions[user_id]["step"] = "work_hours_other"
+    user_sessions[user_id]["work_msg_id"] = call.message.message_id
+    bot.edit_message_text(
+        "Введи количество часов работы цифрами:",
+        call.message.chat.id,
+        call.message.message_id
+    )
 
 
 @bot.message_handler(func=lambda message: user_sessions.get(message.from_user.id, {}).get("step") == "work_hours_other")
 def handle_work_other(message):
     user_id = message.from_user.id
+    msg_id = user_sessions[user_id]["work_msg_id"]
 
     try:
         user_sessions[user_id]["data"]["work"] = int(message.text)
     except ValueError:
         bot.send_message(message.chat.id, "Введи число:")
         return
+
+    if msg_id:
+        bot.edit_message_text(
+            f"💼 Ты работал сегодня: _{user_sessions[user_id]['data']['work']} часов_",
+            message.chat.id,
+            msg_id, 
+            parse_mode="Markdown"
+        )
 
     user_sessions[user_id]["step"] = "sleep_hours"
     bot.send_message(message.chat.id, "Сколько часов ты спал?", reply_markup=keyboards.sleep_hours())
@@ -138,6 +162,12 @@ def add_sleep(call):
     user_id = call.from_user.id
     user_sessions[user_id]["step"] = "ask_comment"
     user_sessions[user_id]["data"]["sleep"] = int(call.data.split(":")[1])
+    bot.edit_message_text(
+        f"😴 Ты спал сегодня: _{user_sessions[user_id]['data']['sleep']} часов_",
+        call.message.chat.id,
+        call.message.message_id, 
+        parse_mode="Markdown"
+    )
     bot.send_message(
         call.message.chat.id,
         "Хочешь добавить комментарий?",
@@ -147,19 +177,35 @@ def add_sleep(call):
 @bot.callback_query_handler(is_sleep_other)
 def add_sleep_other(call):
     bot.answer_callback_query(call.id)
-    user_sessions[call.from_user.id]["step"] = "sleep_hours_other"
-    bot.send_message(call.message.chat.id, "Введи количество часов сна цифрами:")
+    user_id = call.from_user.id
+    user_sessions[user_id]["step"] = "sleep_hours_other"
+    user_sessions[user_id]["sleep_msg_id"] = call.message.message_id
+    bot.edit_message_text(
+        "Введи количество часов сна цифрами:",
+        call.message.chat.id,
+        call.message.message_id
+    )
+    
 
 
 @bot.message_handler(func=lambda message: user_sessions.get(message.from_user.id, {}).get("step") == "sleep_hours_other")
 def handle_sleep_other(message):
     user_id = message.from_user.id
+    msg_id = user_sessions[user_id].get("sleep_msg_id")
 
     try:
         user_sessions[user_id]["data"]["sleep"] = int(message.text)
     except ValueError:
         bot.send_message(message.chat.id, "Введи число:")
         return
+
+    if msg_id:
+        bot.edit_message_text(
+            f"😴 Ты спал сегодня: _{user_sessions[user_id]['data']['sleep']} часов_",
+            message.chat.id,
+            msg_id,
+            parse_mode="Markdown"
+        )
 
     user_sessions[user_id]["step"] = "ask_comment"
     bot.send_message(message.chat.id, "Хочешь добавить комментарий?", reply_markup=keyboards.add_comment())
@@ -169,7 +215,12 @@ def handle_sleep_other(message):
 def comment_yes(call):
     bot.answer_callback_query(call.id)
     user_sessions[call.from_user.id]["step"] = "comment"
-    bot.send_message(call.message.chat.id, "Напиши короткий комментарий о дне:")
+    user_sessions[call.from_user.id]["prompt_msg_id"] = call.message.message_id
+    bot.edit_message_text(
+        "Напиши короткий комментарий о дне:",
+        call.message.chat.id,
+        call.message.message_id
+    )
 
 @bot.callback_query_handler(is_comment_skip)
 def comment_skip(call):
@@ -177,6 +228,12 @@ def comment_skip(call):
     user_id = call.from_user.id
     session = user_sessions[user_id]["data"]
     session["comment"] = ""
+
+    bot.edit_message_text(
+        "💬 Без комментария",
+        call.message.chat.id,
+        call.message.message_id
+    )
     
     database.add_entry(
         user_id,
@@ -195,6 +252,14 @@ def add_comment(message):
     user_id = message.from_user.id
     session = user_sessions[user_id]["data"]
     session["comment"] = message.text
+    msg_id = user_sessions[user_id].get("prompt_msg_id")
+
+    if msg_id:
+        bot.edit_message_text(
+            "💬 Комментарий добавлен",
+            message.chat.id,
+            msg_id
+        )
     
     database.add_entry(
         user_id,
@@ -217,13 +282,22 @@ def add_comment(message):
 @bot.callback_query_handler(func=lambda call: call.data == "back")
 def back(call):
     bot.answer_callback_query(call.id)
+    bot.delete_message(call.message.chat.id, call.message.message_id)
     bot.send_message(call.message.chat.id, "Выбери действие:", reply_markup=keyboards.menu())
     
-# Роут возвращения к меню из истории
-@bot.callback_query_handler(func=lambda call: call.data == "back_history")
-def back_history(call):
+# Роут возвращения к меню путем удаления себя
+@bot.callback_query_handler(func=lambda call: call.data == "me_delete_back")
+def me_delete_back(call):
     bot.answer_callback_query(call.id)
-    bot.send_message(call.message.chat.id, "Выберите за какой период показать историю:", reply_markup=keyboards.history())
+    bot.delete_message(call.message.chat.id, call.message.message_id)
+
+# Роут возвращения к меню из графиков
+@bot.callback_query_handler(func=lambda call: call.data == "graphs_back")
+def graphs_back(call):
+    bot.answer_callback_query(call.id)
+    bot.delete_message(call.message.chat.id, call.message.message_id)
+    bot.send_message(call.message.chat.id, "Выбери действие:", reply_markup=keyboards.stats())
+
 
 # Роут помощи
 @bot.callback_query_handler(func=lambda call: call.data == "help")
@@ -240,7 +314,7 @@ def help(call):
     "⚙️ *Настройки* — задать или убрать время ежедневного напоминания\n"
     "🧹 *Очистить данные* — полное удаление всех твоих записей (безвозвратно)\n\n"
     "Если что-то сломалось — перезапусти бота командой /start",
-    parse_mode="Markdown", reply_markup=keyboards.back())
+    parse_mode="Markdown", reply_markup=keyboards.me_delete_back())
 
 ###########################
 # РОУТЫ ДЛЯ ОЧИСТКИ ДАННЫХ
@@ -266,8 +340,13 @@ def clear_confirm(call):
     user_id = call.from_user.id
 
     database.clear_entries(user_id)
-    bot.send_message(call.message.chat.id, "Все данные успешно очищены!")
-    bot.send_message(call.message.chat.id, "Выбери действие:", reply_markup=keyboards.menu())
+    bot.edit_message_text(
+        "Все данные успешно очищены!",
+        call.message.chat.id,
+        call.message.message_id,
+        reply_markup=keyboards.me_delete_back()
+    )
+    
 
 ###########################
 # РОУТЫ ДЛЯ СТАТИСТИКИ
@@ -296,12 +375,20 @@ def show_week(call):
     rows = database.get_stats_week(user_id)
 
     if not rows or rows[0] is None:
-        bot.send_message(call.message.chat.id, "Нет записей за неделю.")
+        bot.edit_message_text(
+            "Нет записей за неделю.",
+            call.message.chat.id,
+            call.message.message_id,
+            reply_markup=keyboards.stats()
+        )
         return
 
-    bot.send_message(call.message.chat.id, 
-    f"Статистика за неделю:\n\n😊 Среднее настроение: {float(rows[0]):.1f}\n💼 Средняя работа: {float(rows[1]):.1f}\n😴 Средний сон: {float(rows[2]):.1f}")
-    bot.send_message(call.message.chat.id, "Выбери действие:", reply_markup=keyboards.stats())
+    bot.edit_message_text(
+        f"Статистика за неделю:\n\n😊 Среднее настроение: {float(rows[0]):.1f}\n💼 Средняя работа: {float(rows[1]):.1f}\n😴 Средний сон: {float(rows[2]):.1f}",
+        call.message.chat.id,
+        call.message.message_id,
+        reply_markup=keyboards.stats()
+    )
   
 
 # Роут показа статистики за месяц
@@ -312,12 +399,20 @@ def show_month(call):
     rows = database.get_stats_month(user_id)
 
     if not rows or rows[0] is None:
-        bot.send_message(call.message.chat.id, "Нет записей за месяц.")
+        bot.edit_message_text(
+            "Нет записей за месяц.",
+            call.message.chat.id,
+            call.message.message_id,
+            reply_markup=keyboards.stats()
+        )
         return
 
-    bot.send_message(call.message.chat.id, 
-    f"Статистика за месяц:\n\n😊 Среднее настроение: {float(rows[0]):.1f}\n💼 Средняя работа: {float(rows[1]):.1f}\n😴 Средний сон: {float(rows[2]):.1f}")
-    bot.send_message(call.message.chat.id, "Выбери действие:", reply_markup=keyboards.stats())
+    bot.edit_message_text(
+        f"Статистика за месяц:\n\n😊 Среднее настроение: {float(rows[0]):.1f}\n💼 Средняя работа: {float(rows[1]):.1f}\n😴 Средний сон: {float(rows[2]):.1f}",
+        call.message.chat.id,
+        call.message.message_id,
+        reply_markup=keyboards.stats()
+    )
 
 # Роут показа инсайтов
 @bot.callback_query_handler(func=lambda call: call.data == "insights")
@@ -330,9 +425,15 @@ def show_insights(call):
         bot.send_message(call.message.chat.id, "Нет инсайтов.")
         return
 
-    bot.send_message(call.message.chat.id, 
-    f"Твой инсайт:\n\n_{rows[0]}_", parse_mode="Markdown")
-    bot.send_message(call.message.chat.id, "Выбери действие:", reply_markup=keyboards.stats())
+    bot.edit_message_text(
+        f"Твой инсайт:\n\n_{rows[0]}_",
+        call.message.chat.id,
+        call.message.message_id,
+        parse_mode="Markdown",
+        reply_markup=keyboards.stats()
+    )
+    
+    
 
 ###########################
 # РОУТЫ ДЛЯ ГРАФИКОВ
@@ -342,7 +443,12 @@ def show_insights(call):
 @bot.callback_query_handler(func=lambda call: call.data == "graphs")
 def show_graphs(call):
     bot.answer_callback_query(call.id)
-    bot.send_message(call.message.chat.id, "Выберите период для графика:", reply_markup=keyboards.graphs())
+    bot.edit_message_text(
+        "Выберите период для графика:",
+        call.message.chat.id,
+        call.message.message_id,
+        reply_markup=keyboards.graphs()
+    )
 
 # Роут для вывода графика за неделю
 @bot.callback_query_handler(func=lambda call: call.data == "graph_week")
@@ -352,15 +458,21 @@ def show_graph_week(call):
     interval = 7
     image_buffer = generate_stats_image(user_id, interval)
     if image_buffer is None:
-        bot.send_message(call.message.chat.id, "Недостаточно данных за указанный период.")
+        bot.edit_message_text(
+            "Недостаточно данных за указанный период.",
+            call.message.chat.id,
+            call.message.message_id,
+            reply_markup=keyboards.graphs()
+        )
         return
 
+    bot.delete_message(call.message.chat.id, call.message.message_id)
     bot.send_photo(
         chat_id=call.message.chat.id,
         photo=image_buffer,
         caption=f"📈 Ваша статистика за последние дни: {interval}",
+        reply_markup=keyboards.graphs()
     )
-    bot.send_message(call.message.chat.id, "Выберите период для графика:", reply_markup=keyboards.graphs())
     image_buffer.close()
 
 
@@ -372,15 +484,21 @@ def show_graph_two_weeks(call):
     interval = 14
     image_buffer = generate_stats_image(user_id, interval)
     if image_buffer is None:
-        bot.send_message(call.message.chat.id, "Недостаточно данных за указанный период.")
+        bot.edit_message_text(
+            "Недостаточно данных за указанный период.",
+            call.message.chat.id,
+            call.message.message_id,
+            reply_markup=keyboards.graphs()
+        )
         return
 
+    bot.delete_message(call.message.chat.id, call.message.message_id)
     bot.send_photo(
         chat_id=call.message.chat.id,
         photo=image_buffer,
         caption=f"📈 Ваша статистика за последние дни: {interval}",
+        reply_markup=keyboards.graphs()
     )
-    bot.send_message(call.message.chat.id, "Выберите период для графика:", reply_markup=keyboards.graphs())
     image_buffer.close()
     
 # Роут для вывода графика за месяц
@@ -391,15 +509,21 @@ def show_graph_month(call):
     interval = 30
     image_buffer = generate_stats_image(user_id, interval)
     if image_buffer is None:
-        bot.send_message(call.message.chat.id, "Недостаточно данных за указанный период.")
+        bot.edit_message_text(
+            "Недостаточно данных за указанный период.",
+            call.message.chat.id,
+            call.message.message_id,
+            reply_markup=keyboards.graphs()
+        )
         return
 
+    bot.delete_message(call.message.chat.id, call.message.message_id)
     bot.send_photo(
         chat_id=call.message.chat.id,
         photo=image_buffer,
         caption=f"📈 Ваша статистика за последние дни: {interval}",
+        reply_markup=keyboards.graphs()
     )
-    bot.send_message(call.message.chat.id, "Выберите период для графика:", reply_markup=keyboards.graphs())
     image_buffer.close()
 
 ###########################
@@ -426,10 +550,6 @@ def show_history_week(call):
     user_id = call.from_user.id
     rows = database.get_history(user_id, 7)
 
-    if not rows or rows[0] is None:
-        bot.send_message(call.message.chat.id, "Нет записей за неделю.")
-        return
-
     lines = []
     for row in rows:
         id, u_id, date, mood, work, sleep, comment, created_at = row
@@ -444,9 +564,12 @@ def show_history_week(call):
         )
         lines.append(shema)
 
-    bot.send_message(call.message.chat.id,
-    f"История за неделю:\n\n{'\n\n'.join(lines)}",
-    reply_markup=keyboards.history())
+    bot.edit_message_text(
+        f"История за неделю:\n\n{'\n\n'.join(lines)}",
+        call.message.chat.id,
+        call.message.message_id,
+        reply_markup=keyboards.history()
+    )
 
 
 # ЗА МЕСЯЦ
@@ -456,10 +579,6 @@ def show_history_month(call):
     user_id = call.from_user.id
     rows = database.get_history(user_id, 30)
 
-    if not rows or rows[0] is None:
-        bot.send_message(call.message.chat.id, "Нет записей за месяц.")
-        return
-
     lines = []
     for row in rows:
         id, u_id, date, mood, work, sleep, comment, created_at = row
@@ -474,9 +593,12 @@ def show_history_month(call):
         )
         lines.append(shema)
 
-    bot.send_message(call.message.chat.id,
-    f"История за месяц:\n\n{'\n\n'.join(lines)}",
-    reply_markup=keyboards.history())
+    bot.edit_message_text(
+        f"История за месяц:\n\n{'\n\n'.join(lines)}",
+        call.message.chat.id,
+        call.message.message_id,
+        reply_markup=keyboards.history()
+    )
 
 # ЗА ВСЕ ВРЕМЯ
 @bot.callback_query_handler(func=lambda call: call.data == "history_all")
@@ -485,10 +607,6 @@ def show_history_all(call):
     user_id = call.from_user.id
     rows = database.get_history(user_id)
 
-    if not rows or rows[0] is None:
-        bot.send_message(call.message.chat.id, "Нет записей.")
-        return
-
     lines = []
     for row in rows:
         id, u_id, date, mood, work, sleep, comment, created_at = row
@@ -503,10 +621,12 @@ def show_history_all(call):
         )
         lines.append(shema)
 
-    bot.send_message(call.message.chat.id,
-    f"История за все время:\n\n{'\n\n'.join(lines)}",
-    reply_markup=keyboards.history())
-
+    bot.edit_message_text(
+        f"История за все время:\n\n{'\n\n'.join(lines)}",
+        call.message.chat.id,
+        call.message.message_id,
+        reply_markup=keyboards.history()
+    )
 ###########################
 # РОУТЫ ДЛЯ НАСТРОЕК
 ###########################
@@ -521,9 +641,19 @@ def settings(call):
     remind_time = database.get_remind_time(user_id)
     if remind_time is not None:
         time_str = remind_time[0].strftime("%H:%M")
-        bot.send_message(call.message.chat.id, f"Время напоминания установлено на: _{time_str}_", parse_mode="Markdown", reply_markup=keyboards.settings_A())
+        msg = bot.send_message(
+            call.message.chat.id,
+            f"Время напоминания установлено на: _{time_str}_",
+            parse_mode="Markdown",
+            reply_markup=keyboards.settings_A()
+        )
     else:
-        bot.send_message(call.message.chat.id, "Время напоминания не установлено. Нажмите на кнопку ниже, чтобы установить.", reply_markup=keyboards.settings_B())
+        msg = bot.send_message(
+            call.message.chat.id,
+            "Время напоминания не установлено. Нажмите на кнопку ниже, чтобы установить.",
+            reply_markup=keyboards.settings_B()
+        )
+    user_sessions[user_id] = {"step": None, "settings_msg_id": msg.message_id}
 
 #######################################################
 # перенправления роутов
@@ -531,16 +661,24 @@ def settings(call):
 def add_reminder_port(call):
     bot.answer_callback_query(call.id)
     user_id = call.from_user.id
-    user_sessions[user_id] = {"step": "add_reminder"}
-    bot.send_message(call.message.chat.id, "Введите время напоминания в формате HH:MM (например, 09:00):")
+    user_sessions[user_id] = {"step": "add_reminder", "settings_msg_id": call.message.message_id}
+    bot.edit_message_text(
+        "Введите время напоминания в формате HH:MM (например, 09:00):",
+        call.message.chat.id,
+        call.message.message_id
+    )
 
 # тоже перенаправление
 @bot.callback_query_handler(func=lambda call: call.data == "edit_reminder")
 def edit_reminder_port(call):
     bot.answer_callback_query(call.id)
     user_id = call.from_user.id
-    user_sessions[user_id] = {"step": "edit_reminder"}
-    bot.send_message(call.message.chat.id, "Введите новое время напоминания в формате HH:MM (например, 09:00):")
+    user_sessions[user_id] = {"step": "edit_reminder", "settings_msg_id": call.message.message_id}
+    bot.edit_message_text(
+        "Введите новое время напоминания в формате HH:MM (например, 09:00):",
+        call.message.chat.id,
+        call.message.message_id
+    )
 #######################################################
 
 #Установка напоминания
@@ -548,13 +686,23 @@ def edit_reminder_port(call):
 def add_reminder(message):
     user_id = message.from_user.id
     time = message.text.strip()
+    msg_id = user_sessions[user_id].get("settings_msg_id")
+    bot.delete_message(message.chat.id, message.message_id)
 
     if not TIME_PATTERN.match(time):
         bot.send_message(message.chat.id, "Неверный формат. Введите время в формате HH:MM (например, 09:00):")
         return
  
     database.set_remind_time(user_id, time)
-    bot.send_message(message.chat.id, f"Время напоминания установлено на _{time}_.", parse_mode="Markdown", reply_markup=keyboards.settings_A())
+
+    if msg_id:
+        bot.edit_message_text(
+            f"Время напоминания установлено на _{time}_.",
+            message.chat.id,
+            msg_id,
+            parse_mode="Markdown",
+            reply_markup=keyboards.settings_A()
+        )
     del user_sessions[user_id]
 
 #Изменение напоминания
@@ -564,13 +712,23 @@ def edit_reminder(message):
     new_time = message.text.strip()
     current_time = database.get_remind_time(user_id)
     current_str = current_time[0].strftime("%H:%M") if current_time and current_time[0] else "—"
+    msg_id = user_sessions[user_id].get("settings_msg_id")
+    bot.delete_message(message.chat.id, message.message_id)
  
     if not TIME_PATTERN.match(new_time):
         bot.send_message(message.chat.id, "Неверный формат. Введите время в формате HH:MM (например, 09:00):")
         return
  
     database.set_remind_time(user_id, new_time)
-    bot.send_message(message.chat.id, f"Время напоминания изменено с _{current_str}_ на _{new_time}_.", parse_mode="Markdown", reply_markup=keyboards.settings_A())
+    
+    if msg_id:
+        bot.edit_message_text(
+            f"Время напоминания изменено с _{current_str}_ на _{new_time}_.",
+            message.chat.id,
+            msg_id,
+            parse_mode="Markdown",
+            reply_markup=keyboards.settings_A()
+        )
     del user_sessions[user_id]
 
 #Удаление напоминания
@@ -578,7 +736,12 @@ def edit_reminder(message):
 def delete_reminder(call):
     bot.answer_callback_query(call.id)
     database.clear_remind_time(call.from_user.id)
-    bot.send_message(call.message.chat.id, "Напоминание удалено.", reply_markup=keyboards.settings_B())
+    bot.edit_message_text(
+        "Напоминание удалено.",
+        call.message.chat.id,
+        call.message.message_id,
+        reply_markup=keyboards.settings_B()
+    )
 
 
 
